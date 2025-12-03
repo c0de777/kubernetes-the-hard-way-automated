@@ -5,30 +5,30 @@ provider "aws" {
 
 # Variables
 variable "ami_id" {
-  default = "ami-0fa3fe0fa7920f68e" # Amazon Linux AMI ID
+  default = "ami-0fa3fe0fa7920f68e" # Replace with Amazon Linux or Debian AMI ID
 }
 
 # --- Networking ---
-# Lookup default VPC
+# Lookup default VPC automatically
 data "aws_vpc" "default" {
   default = true
 }
 
-# Security Group for Kubernetes cluster
+# Security Group (like launch-wizard, but with Kubernetes ports too)
 resource "aws_security_group" "k8s_sg" {
   name        = "k8s-sg"
-  description = "Allow Kubernetes traffic inside VPC and SSH from my IP"
+  description = "Allow SSH from anywhere and Kubernetes traffic inside VPC"
   vpc_id      = data.aws_vpc.default.id
 
-  # SSH only from your IP
+  # SSH access (like launch-wizard)
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["YOUR_PUBLIC_IP/32"] # replace with your IP
+    cidr_blocks = ["0.0.0.0/0"] # open to all for convenience
   }
 
-  # Kubernetes API server
+  # Kubernetes API server (6443) inside VPC
   ingress {
     from_port   = 6443
     to_port     = 6443
@@ -36,7 +36,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # etcd
+  # etcd (2379–2380) inside VPC
   ingress {
     from_port   = 2379
     to_port     = 2380
@@ -44,7 +44,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # kubelet + scheduler + controller
+  # kubelet + scheduler + controller (10250–10252) inside VPC
   ingress {
     from_port   = 10250
     to_port     = 10252
@@ -52,7 +52,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # read-only kubelet API
+  # read-only kubelet API (10255) inside VPC
   ingress {
     from_port   = 10255
     to_port     = 10255
@@ -60,7 +60,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # NodePort services
+  # NodePort services (30000–32767) inside VPC
   ingress {
     from_port   = 30000
     to_port     = 32767
