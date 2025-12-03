@@ -14,21 +14,21 @@ data "aws_vpc" "default" {
   default = true
 }
 
-# Security Group (like launch-wizard, but with Kubernetes ports too)
+# Security Group (SSH + Kubernetes ports)
 resource "aws_security_group" "k8s_sg" {
   name        = "k8s-sg"
   description = "Allow SSH from anywhere and Kubernetes traffic inside VPC"
   vpc_id      = data.aws_vpc.default.id
 
-  # SSH access (like launch-wizard)
+  # SSH access
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # open to all for convenience
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Kubernetes API server (6443) inside VPC
+  # Kubernetes API server
   ingress {
     from_port   = 6443
     to_port     = 6443
@@ -36,7 +36,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # etcd (2379–2380) inside VPC
+  # etcd
   ingress {
     from_port   = 2379
     to_port     = 2380
@@ -44,7 +44,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # kubelet + scheduler + controller (10250–10252) inside VPC
+  # kubelet + scheduler + controller
   ingress {
     from_port   = 10250
     to_port     = 10252
@@ -52,7 +52,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # read-only kubelet API (10255) inside VPC
+  # read-only kubelet API
   ingress {
     from_port   = 10255
     to_port     = 10255
@@ -60,7 +60,7 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
-  # NodePort services (30000–32767) inside VPC
+  # NodePort services
   ingress {
     from_port   = 30000
     to_port     = 32767
@@ -82,22 +82,6 @@ resource "aws_security_group" "k8s_sg" {
 }
 
 # --- Instances ---
-resource "aws_instance" "jumpbox" {
-  ami           = var.ami_id
-  instance_type = "t2.micro"
-
-  root_block_device {
-    volume_size = 10
-  }
-
-  user_data = file("${path.module}/startup_scripts/jumpbox.sh")
-  vpc_security_group_ids = [aws_security_group.k8s_sg.id]
-
-  tags = {
-    Name = "jumpbox"
-  }
-}
-
 resource "aws_instance" "server" {
   ami           = var.ami_id
   instance_type = "t2.small"
@@ -107,6 +91,9 @@ resource "aws_instance" "server" {
   }
 
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
+
+  # Run server setup script
+  user_data = file("${path.module}/startup_scripts/server.sh")
 
   tags = {
     Name = "server"
@@ -123,6 +110,9 @@ resource "aws_instance" "node0" {
 
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
+  # Run node-0 setup script
+  user_data = file("${path.module}/startup_scripts/node-0.sh")
+
   tags = {
     Name = "node-0"
   }
@@ -138,7 +128,36 @@ resource "aws_instance" "node1" {
 
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
+  # Run node-1 setup script
+  user_data = file("${path.module}/startup_scripts/node-1.sh")
+
   tags = {
     Name = "node-1"
   }
 }
+
+resource "aws_instance" "jumpbox" {
+  ami           = var.ami_id
+  instance_type = "t2.micro"
+
+  root_block_device {
+    volume_size = 10
+  }
+
+  vpc_security_group_ids = [aws_security_group.k8s_sg.id]
+
+  # Run jumpbox setup script
+  user_data = file("${path.module}/startup_scripts/jumpbox.sh")
+
+  # Ensure jumpbox is created after server and nodes
+  depends_on = [
+    aws_instance.server,
+    aws_instance.node0,
+    aws_instance.node1
+  ]
+
+  tags = {
+    Name = "jumpbox"
+  }
+}
+
