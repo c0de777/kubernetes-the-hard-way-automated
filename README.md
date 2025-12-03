@@ -7,9 +7,11 @@ utilize terraform to setup initial ec2
 3. configure aws creds for terraform access [aws configure]
 4. run main.tf in the terraform folder [terraform init, terraform plan, terraform apply]
 5. verify these instances are correct. 
-  | Name    | Description            | CPU | RAM   | Storage |
+
+| Name    | Description            | CPU | RAM   | Storage |
 |---------|------------------------|-----|-------|---------|
 | jumpbox | Administration host    | 1   | 512MB | 10GB    |
 | server  | Kubernetes server      | 1   | 2GB   | 20GB    |
 | node-0  | Kubernetes worker node | 1   | 2GB   | 20GB    |
-| node-1  | Kubernetes worker node | 1   | 2GB   | 20GB   
+| node-1  | Kubernetes worker node | 1   | 2GB   | 20GB    |
+
