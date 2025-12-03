@@ -90,6 +90,7 @@ resource "aws_instance" "jumpbox" {
     volume_size = 10
   }
 
+  user_data = file("${path.module}/startup_scripts/jumpbox.sh")
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
   tags = {
