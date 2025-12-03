@@ -93,7 +93,7 @@ resource "aws_instance" "server" {
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
   # Run server setup script
-  user_data = file("${path.module}/startup_scripts/server.sh")
+  user_data = file("${path.module}/setup_scripts/server.sh")
 
   tags = {
     Name = "server"
@@ -111,7 +111,7 @@ resource "aws_instance" "node0" {
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
   # Run node-0 setup script
-  user_data = file("${path.module}/startup_scripts/node-0.sh")
+  user_data = file("${path.module}/setup_scripts/node-0.sh")
 
   tags = {
     Name = "node-0"
@@ -129,7 +129,7 @@ resource "aws_instance" "node1" {
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
   # Run node-1 setup script
-  user_data = file("${path.module}/startup_scripts/node-1.sh")
+  user_data = file("${path.module}/setup_scripts/node-1.sh")
 
   tags = {
     Name = "node-1"
@@ -147,7 +147,7 @@ resource "aws_instance" "jumpbox" {
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
   # Run jumpbox setup script
-  user_data = file("${path.module}/startup_scripts/jumpbox.sh")
+  user_data = file("${path.module}/setup_scripts/jumpbox.sh")
 
   # Ensure jumpbox is created after server and nodes
   depends_on = [
