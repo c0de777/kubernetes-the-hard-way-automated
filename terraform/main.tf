@@ -5,7 +5,7 @@ provider "aws" {
 
 # Variables
 variable "ami_id" {
-  default = "ami-0fa3fe0fa7920f68e" # Replace with Amazon Linux or Debian AMI ID
+  default = "ami-0ecb62995f68bb549" # Replace with Amazon Linux or Debian AMI ID
 }
 
 # --- Networking ---
