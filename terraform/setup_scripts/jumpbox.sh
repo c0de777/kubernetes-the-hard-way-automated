@@ -5,6 +5,9 @@ set -e
 apt-get update
 apt-get -y install wget curl vim openssl git tar
 
+# Set hostname
+hostnamectl set-hostname jumpbox.kubernetes.local
+
 # Clone Kubernetes The Hard Way repo
 git clone --depth 1 https://github.com/kelseyhightower/kubernetes-the-hard-way.git /root/kubernetes-the-hard-way
 cd /root/kubernetes-the-hard-way
