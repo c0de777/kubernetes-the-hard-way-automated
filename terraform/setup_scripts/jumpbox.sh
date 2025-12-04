@@ -77,12 +77,6 @@ chown ubuntu:ubuntu /home/ubuntu/.ssh/k8shard.pem
 
 # --- Distribute hosts file to all cluster members ---
 while read IP FQDN HOST SUBNET; do
-  scp hosts root@$${HOST}:~/
-  ssh -n root@$${HOST} "cat hosts >> /etc/hosts"
-done < machines.txt
-
-# --- Distribute hosts file to all cluster members ---
-while read IP FQDN HOST SUBNET; do
   scp -i /home/ubuntu/.ssh/k8shard.pem hosts ubuntu@$${HOST}:~/
   ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${HOST} "sudo sh -c 'cat hosts >> /etc/hosts'"
 done < machines.txt
