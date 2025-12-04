@@ -146,11 +146,12 @@ resource "aws_instance" "jumpbox" {
 
   vpc_security_group_ids = [aws_security_group.k8s_sg.id]
 
-  # Use templatefile so we can interpolate private IPs into jumpbox.sh
+  # Use templatefile so we can inject IPs and private key into jumpbox.sh
   user_data = templatefile("${path.module}/setup_scripts/jumpbox.sh", {
     server_private_ip = aws_instance.server.private_ip
     node0_private_ip  = aws_instance.node0.private_ip
     node1_private_ip  = aws_instance.node1.private_ip
+    private_key       = file("${path.module}/keys/id_rsa")   # path to your private key file
   })
 
   # Ensure jumpbox is created after server and nodes
@@ -164,4 +165,3 @@ resource "aws_instance" "jumpbox" {
     Name = "jumpbox"
   }
 }
-
