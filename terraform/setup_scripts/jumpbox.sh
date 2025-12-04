@@ -14,19 +14,19 @@ cd /root/kubernetes-the-hard-way
 
 # Download binaries based on architecture
 ARCH=$(dpkg --print-architecture)
-wget -q --show-progress --https-only --timestamping -P downloads -i downloads-${ARCH}.txt
+wget -q --show-progress --https-only --timestamping -P downloads -i downloads-$${ARCH}.txt
 
 # Extract binaries into organized directories
 mkdir -p downloads/{client,cni-plugins,controller,worker}
-tar -xvf downloads/crictl-v1.32.0-linux-${ARCH}.tar.gz -C downloads/worker/
-tar -xvf downloads/containerd-2.1.0-beta.0-linux-${ARCH}.tar.gz --strip-components 1 -C downloads/worker/
-tar -xvf downloads/cni-plugins-linux-${ARCH}-v1.6.2.tgz -C downloads/cni-plugins/
-tar -xvf downloads/etcd-v3.6.0-rc.3-linux-${ARCH}.tar.gz -C downloads/ --strip-components 1 etcd-v3.6.0-rc.3-linux-${ARCH}/etcdctl etcd-v3.6.0-rc.3-linux-${ARCH}/etcd
+tar -xvf downloads/crictl-v1.32.0-linux-$${ARCH}.tar.gz -C downloads/worker/
+tar -xvf downloads/containerd-2.1.0-beta.0-linux-$${ARCH}.tar.gz --strip-components 1 -C downloads/worker/
+tar -xvf downloads/cni-plugins-linux-$${ARCH}-v1.6.2.tgz -C downloads/cni-plugins/
+tar -xvf downloads/etcd-v3.6.0-rc.3-linux-$${ARCH}.tar.gz -C downloads/ --strip-components 1 etcd-v3.6.0-rc.3-linux-$${ARCH}/etcdctl etcd-v3.6.0-rc.3-linux-$${ARCH}/etcd
 
 mv downloads/{etcdctl,kubectl} downloads/client/
 mv downloads/{etcd,kube-apiserver,kube-controller-manager,kube-scheduler} downloads/controller/
 mv downloads/{kubelet,kube-proxy} downloads/worker/
-mv downloads/runc.${ARCH} downloads/worker/runc
+mv downloads/runc.$${ARCH} downloads/worker/runc
 
 # Clean up archives
 rm -rf downloads/*gz
@@ -60,7 +60,7 @@ echo "" > hosts
 echo "# Kubernetes The Hard Way Automated" >> hosts
 
 while read IP FQDN HOST SUBNET; do
-    ENTRY="${IP} ${FQDN} ${HOST}"
+    ENTRY="$${IP} $${FQDN} $${HOST}"
     echo $ENTRY >> hosts
 done < machines.txt
 
@@ -77,6 +77,6 @@ chown ec2-user:ec2-user /home/ec2-user/.ssh/id_rsa
 
 # --- Distribute hosts file to all cluster members ---
 while read IP FQDN HOST SUBNET; do
-  scp hosts root@${HOST}:~/
-  ssh -n root@${HOST} "cat hosts >> /etc/hosts"
+  scp hosts root@$${HOST}:~/
+  ssh -n root@$${HOST} "cat hosts >> /etc/hosts"
 done < machines.txt
