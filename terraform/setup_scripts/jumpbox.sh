@@ -69,11 +69,11 @@ cat hosts >> /etc/hosts
 
 # Write private key for SSH access
 mkdir -p /home/ec2-user/.ssh
-cat <<EOF >/home/ec2-user/.ssh/id_rsa
+cat <<EOF >/home/ec2-user/.ssh/k8shard.pem
 ${private_key}
 EOF
-chmod 600 /home/ec2-user/.ssh/id_rsa
-chown ec2-user:ec2-user /home/ec2-user/.ssh/id_rsa
+chmod 600 /home/ec2-user/.ssh/k8shard.pem
+chown ec2-user:ec2-user /home/ec2-user/.ssh/k8shard.pem
 
 # --- Distribute hosts file to all cluster members ---
 while read IP FQDN HOST SUBNET; do
