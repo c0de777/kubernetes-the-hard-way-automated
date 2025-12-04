@@ -38,8 +38,16 @@ cp downloads/client/kubectl /usr/local/bin/
 kubectl version --client
 
 # --- Create machines.txt with Terraform interpolated values ---
-cat <<EOF > /home/ubuntu/machines.txt
+cat <<EOF > /home/ec2-user/machines.txt
 ${server_private_ip} server.kubernetes.local server
 ${node0_private_ip} node-0.kubernetes.local node-0 10.200.0.0/24
 ${node1_private_ip} node-1.kubernetes.local node-1 10.200.1.0/24
 EOF
+
+# Write private key for SSH access
+mkdir -p /home/ec2-user/.ssh
+cat <<EOF >/home/ec2-user/.ssh/id_rsa
+${private_key}
+EOF
+chmod 600 /home/ec2-user/.ssh/id_rsa
+chown ec2-user:ec2-user /home/ec2-user/.ssh/id_rsa
