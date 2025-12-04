@@ -37,3 +37,9 @@ cp downloads/client/kubectl /usr/local/bin/
 # Verify installation
 kubectl version --client
 
+# --- Create machines.txt with Terraform interpolated values ---
+cat <<EOF > /home/ubuntu/machines.txt
+${server_private_ip} server.kubernetes.local server
+${node0_private_ip} node-0.kubernetes.local node-0 10.200.0.0/24
+${node1_private_ip} node-1.kubernetes.local node-1 10.200.1.0/24
+EOF
