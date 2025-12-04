@@ -81,10 +81,17 @@ resource "aws_security_group" "k8s_sg" {
   }
 }
 
+# --- Key Pair ---
+resource "aws_key_pair" "main" {
+  key_name   = "k8s-key"
+  public_key = file("${path.module}/keys/id_rsa.pub")
+}
+
 # --- Instances ---
 resource "aws_instance" "server" {
   ami           = var.ami_id
   instance_type = "t2.small"
+  key_name      = aws_key_pair.main.key_name
 
   root_block_device {
     volume_size = 20
@@ -103,6 +110,7 @@ resource "aws_instance" "server" {
 resource "aws_instance" "node0" {
   ami           = var.ami_id
   instance_type = "t2.small"
+  key_name      = aws_key_pair.main.key_name
 
   root_block_device {
     volume_size = 20
@@ -121,6 +129,7 @@ resource "aws_instance" "node0" {
 resource "aws_instance" "node1" {
   ami           = var.ami_id
   instance_type = "t2.small"
+  key_name      = aws_key_pair.main.key_name
 
   root_block_device {
     volume_size = 20
@@ -139,6 +148,7 @@ resource "aws_instance" "node1" {
 resource "aws_instance" "jumpbox" {
   ami           = var.ami_id
   instance_type = "t2.micro"
+  key_name      = aws_key_pair.main.key_name
 
   root_block_device {
     volume_size = 10
