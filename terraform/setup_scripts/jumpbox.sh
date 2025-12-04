@@ -48,14 +48,14 @@ Host *
 EOF
 
 # --- Create machines.txt with Terraform interpolated values ---
-cat <<EOF > /home/ec2-user/machines.txt
+cat <<EOF > /home/ubuntu/machines.txt
 ${server_private_ip} server.kubernetes.local server
 ${node0_private_ip} node-0.kubernetes.local node-0 10.200.0.0/24
 ${node1_private_ip} node-1.kubernetes.local node-1 10.200.1.0/24
 EOF
 
 # --- Generate hosts file from machines.txt ---
-cd /home/ec2-user
+cd /home/ubuntu
 echo "" > hosts
 echo "# Kubernetes The Hard Way Automated" >> hosts
 
@@ -68,12 +68,12 @@ done < machines.txt
 cat hosts >> /etc/hosts
 
 # Write private key for SSH access
-mkdir -p /home/ec2-user/.ssh
-cat <<EOF >/home/ec2-user/.ssh/k8shard.pem
+mkdir -p /home/ubuntu/.ssh
+cat <<EOF >/home/ubuntu/.ssh/k8shard.pem
 ${private_key}
 EOF
-chmod 600 /home/ec2-user/.ssh/k8shard.pem
-chown ec2-user:ec2-user /home/ec2-user/.ssh/k8shard.pem
+chmod 600 /home/ubuntu/.ssh/k8shard.pem
+chown ubuntu:ubuntu /home/ubuntu/.ssh/k8shard.pem
 
 # --- Distribute hosts file to all cluster members ---
 while read IP FQDN HOST SUBNET; do
