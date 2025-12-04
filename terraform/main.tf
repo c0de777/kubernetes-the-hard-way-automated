@@ -84,7 +84,7 @@ resource "aws_security_group" "k8s_sg" {
 # --- Key Pair ---
 resource "aws_key_pair" "main" {
   key_name   = "k8s-key"
-  public_key = file("${path.module}/keys/id_rsa.pub")
+  public_key = file("${path.module}/keys/k8shard.pub")
 }
 
 # --- Instances ---
@@ -161,7 +161,7 @@ resource "aws_instance" "jumpbox" {
     server_private_ip = aws_instance.server.private_ip
     node0_private_ip  = aws_instance.node0.private_ip
     node1_private_ip  = aws_instance.node1.private_ip
-    private_key       = file("${path.module}/keys/id_rsa")   # path to your private key file
+    private_key       = file("${path.module}/keys/k8shard.pem")   # path to your private key file
   })
 
   # Ensure jumpbox is created after server and nodes
