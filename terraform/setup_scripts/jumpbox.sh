@@ -37,12 +37,32 @@ cp downloads/client/kubectl /usr/local/bin/
 # Verify installation
 kubectl version --client
 
+# Configure SSH to skip host key checking for automation
+cat <<EOF >/etc/ssh/ssh_config.d/99-nohostkey.conf
+Host *
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+EOF
+
 # --- Create machines.txt with Terraform interpolated values ---
 cat <<EOF > /home/ec2-user/machines.txt
 ${server_private_ip} server.kubernetes.local server
 ${node0_private_ip} node-0.kubernetes.local node-0 10.200.0.0/24
 ${node1_private_ip} node-1.kubernetes.local node-1 10.200.1.0/24
 EOF
+
+# --- Generate hosts file from machines.txt ---
+cd /home/ec2-user
+echo "" > hosts
+echo "# Kubernetes The Hard Way Automated" >> hosts
+
+while read IP FQDN HOST SUBNET; do
+    ENTRY="${IP} ${FQDN} ${HOST}"
+    echo $ENTRY >> hosts
+done < machines.txt
+
+# --- Append to /etc/hosts ---
+cat hosts >> /etc/hosts
 
 # Write private key for SSH access
 mkdir -p /home/ec2-user/.ssh
@@ -51,3 +71,9 @@ ${private_key}
 EOF
 chmod 600 /home/ec2-user/.ssh/id_rsa
 chown ec2-user:ec2-user /home/ec2-user/.ssh/id_rsa
+
+# --- Distribute hosts file to all cluster members ---
+while read IP FQDN HOST SUBNET; do
+  scp hosts root@${HOST}:~/
+  ssh -n root@${HOST} "cat hosts >> /etc/hosts"
+done < machines.txt
