@@ -130,16 +130,146 @@ scp -i /home/ubuntu/.ssh/k8shard.pem \
   ca.key ca.crt \
   kube-api-server.key kube-api-server.crt \
   service-accounts.key service-accounts.crt \
-  
-# --- Generate Data Encryption Config and Key ---
 
-# Generate an encryption key
+# --- Generate kubeconfigs for worker nodes ---
+for host in node-0 node-1; do
+  kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=$${host}.kubeconfig
+
+  kubectl config set-credentials system:node:$${FQDN} \
+    --client-certificate=$${host}.crt \
+    --client-key=$${host}.key \
+    --embed-certs=true \
+    --kubeconfig=$${host}.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-way \
+    --user=system:node:$${FQDN} \
+    --kubeconfig=$${host}.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=$${host}.kubeconfig
+done
+
+# --- kube proxy gen ---
+{
+  kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=kube-proxy.kubeconfig
+
+  kubectl config set-credentials system:kube-proxy \
+    --client-certificate=kube-proxy.crt \
+    --client-key=kube-proxy.key \
+    --embed-certs=true \
+    --kubeconfig=kube-proxy.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-way \
+    --user=system:kube-proxy \
+    --kubeconfig=kube-proxy.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=kube-proxy.kubeconfig
+}
+
+# --- kube controller gen ---
+{
+  kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=kube-controller-manager.kubeconfig
+
+  kubectl config set-credentials system:kube-controller-manager \
+    --client-certificate=kube-controller-manager.crt \
+    --client-key=kube-controller-manager.key \
+    --embed-certs=true \
+    --kubeconfig=kube-controller-manager.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-way \
+    --user=system:kube-controller-manager \
+    --kubeconfig=kube-controller-manager.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=kube-controller-manager.kubeconfig
+}
+
+# --- kube scheduler config gen ---
+{
+  kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=kube-scheduler.kubeconfig
+
+  kubectl config set-credentials system:kube-scheduler \
+    --client-certificate=kube-scheduler.crt \
+    --client-key=kube-scheduler.key \
+    --embed-certs=true \
+    --kubeconfig=kube-scheduler.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-way \
+    --user=system:kube-scheduler \
+    --kubeconfig=kube-scheduler.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=kube-scheduler.kubeconfig
+}
+
+# --- admin kube gen ---
+{
+  kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://127.0.0.1:6443 \
+    --kubeconfig=admin.kubeconfig
+
+  kubectl config set-credentials admin \
+    --client-certificate=admin.crt \
+    --client-key=admin.key \
+    --embed-certs=true \
+    --kubeconfig=admin.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-way \
+    --user=admin \
+    --kubeconfig=admin.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=admin.kubeconfig
+}
+
+# --- Distribute kubeconfigs to worker nodes ---
+for host in node-0 node-1; do
+  # Create required directories
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mkdir -p /var/lib/kube-proxy"
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mkdir -p /var/lib/kubelet"
+
+  # Copy kube-proxy kubeconfig
+  scp -i /home/ubuntu/.ssh/k8shard.pem kube-proxy.kubeconfig \
+    ubuntu@$${host}:/home/ubuntu/kube-proxy.kubeconfig
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mv /home/ubuntu/kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig"
+
+  # Copy kubelet kubeconfig
+  scp -i /home/ubuntu/.ssh/k8shard.pem $${host}.kubeconfig \
+    ubuntu@$${host}:/home/ubuntu/kubelet.kubeconfig
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mv /home/ubuntu/kubelet.kubeconfig /var/lib/kubelet/kubeconfig"
+done
+
+# --- Generate an encryption key ---
 export ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 
-# Create the encryption-config.yaml file
+# --- Create the encryption-config.yaml file ---
 envsubst < configs/encryption-config.yaml \
   > encryption-config.yaml
 
-# Copy the encryption-config.yaml file to the controller instance
+# --- Copy the encryption-config.yaml file to the controller instance ---
 scp -i /home/ubuntu/.ssh/k8shard.pem encryption-config.yaml ubuntu@server:/home/ubuntu/
 ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/encryption-config.yaml /etc/kubernetes/"
