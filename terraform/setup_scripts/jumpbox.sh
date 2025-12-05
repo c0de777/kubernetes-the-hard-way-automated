@@ -80,3 +80,54 @@ while read IP FQDN HOST SUBNET; do
   scp -i /home/ubuntu/.ssh/k8shard.pem hosts ubuntu@$${HOST}:~/
   ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${HOST} "sudo sh -c 'cat hosts >> /etc/hosts'"
 done < machines.txt
+
+# --- Certificate generation and distribution ---
+{
+  openssl genrsa -out ca.key 4096
+  openssl req -x509 -new -sha512 -noenc \
+    -key ca.key -days 3653 \
+    -config ca.conf \
+    -out ca.crt
+}
+
+certs=(
+  "admin" "node-0" "node-1"
+  "kube-proxy" "kube-scheduler"
+  "kube-controller-manager"
+  "kube-api-server"
+  "service-accounts"
+)
+
+for i in $${certs[*]}; do
+  openssl genrsa -out "$${i}.key" 4096
+
+  openssl req -new -key "$${i}.key" -sha256 \
+    -config "ca.conf" -section $${i} \
+    -out "$${i}.csr"
+
+  openssl x509 -req -days 3653 -in "$${i}.csr" \
+    -copy_extensions copyall \
+    -sha256 -CA "ca.crt" \
+    -CAkey "ca.key" \
+    -CAcreateserial \
+    -out "$${i}.crt"
+done
+
+for host in node-0 node-1; do
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mkdir -p /var/lib/kubelet/"
+
+  scp -i /home/ubuntu/.ssh/k8shard.pem ca.crt ubuntu@$${host}:/home/ubuntu/
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mv /home/ubuntu/ca.crt /var/lib/kubelet/"
+
+  scp -i /home/ubuntu/.ssh/k8shard.pem $${host}.crt ubuntu@$${host}:/home/ubuntu/kubelet.crt
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mv /home/ubuntu/kubelet.crt /var/lib/kubelet/"
+
+  scp -i /home/ubuntu/.ssh/k8shard.pem $${host}.key ubuntu@$${host}:/home/ubuntu/kubelet.key
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mv /home/ubuntu/kubelet.key /var/lib/kubelet/"
+done
+
+scp -i /home/ubuntu/.ssh/k8shard.pem \
+  ca.key ca.crt \
+  kube-api-server.key kube-api-server.crt \
+  service-accounts.key service-accounts.crt \
+  
