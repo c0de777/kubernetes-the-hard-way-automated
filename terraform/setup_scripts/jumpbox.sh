@@ -273,3 +273,31 @@ envsubst < configs/encryption-config.yaml \
 # --- Copy the encryption-config.yaml file to the controller instance ---
 scp -i /home/ubuntu/.ssh/k8shard.pem encryption-config.yaml ubuntu@server:/home/ubuntu/
 ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/encryption-config.yaml /etc/kubernetes/"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --- Signal completion to server and nodes ---
+# Create marker file
+echo "Jumpbox setup complete" > /home/ubuntu/jumpbox.done
+
+# Distribute marker file to all cluster members
+while read IP FQDN HOST SUBNET; do
+  scp -i /home/ubuntu/.ssh/k8shard.pem /home/ubuntu/jumpbox.done ubuntu@$${HOST}:/home/ubuntu/
+done < /home/ubuntu/machines.txt
