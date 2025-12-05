@@ -284,11 +284,6 @@ scp -i /home/ubuntu/.ssh/k8shard.pem \
   units/etcd.service \
   ubuntu@server:/home/ubuntu/
 
-# Move files into place on server
-ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/etcd /usr/local/bin/"
-ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/etcdctl /usr/local/bin/"
-ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/etcd.service /etc/systemd/system/"
-
 # --- Distribute Kubernetes controller binaries, units, and configs to server ---
 scp -i /home/ubuntu/.ssh/k8shard.pem \
   downloads/controller/kube-apiserver \
