@@ -275,7 +275,7 @@ envsubst < configs/encryption-config.yaml \
 
 # --- Copy the encryption-config.yaml file to the controller instance ---
 scp -i /home/ubuntu/.ssh/k8shard.pem encryption-config.yaml ubuntu@server:/home/ubuntu/
-ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/encryption-config.yaml /etc/kubernetes/"
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mkdir -p /etc/kubernetes && sudo mv /home/ubuntu/encryption-config.yaml /etc/kubernetes/"
 
 # --- Distribute etcd binaries and systemd unit to server ---
 scp -i /home/ubuntu/.ssh/k8shard.pem \
