@@ -82,6 +82,8 @@ while read IP FQDN HOST SUBNET; do
 done < machines.txt
 
 # --- Certificate generation and distribution ---
+cd /root/kubernetes-the-hard-way
+
 {
   openssl genrsa -out ca.key 4096
   openssl req -x509 -new -sha512 -noenc \
