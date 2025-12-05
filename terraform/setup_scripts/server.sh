@@ -7,7 +7,7 @@ systemctl restart systemd-hostnamed
 
 # Permit root login in sshd_config (optional)
 sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-systemctl restart sshd
+systemctl restart ssh
 
 # Wait for jumpbox to finish
 while [ ! -f /home/ubuntu/jumpbox.done ]; do
