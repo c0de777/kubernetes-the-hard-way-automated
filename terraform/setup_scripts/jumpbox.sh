@@ -132,6 +132,7 @@ scp -i /home/ubuntu/.ssh/k8shard.pem \
   ca.key ca.crt \
   kube-api-server.key kube-api-server.crt \
   service-accounts.key service-accounts.crt \
+  ubuntu@server:/home/ubuntu/
 
 # --- Generate kubeconfigs for worker nodes ---
 for host in node-0 node-1; do
