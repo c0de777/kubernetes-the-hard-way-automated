@@ -131,3 +131,15 @@ scp -i /home/ubuntu/.ssh/k8shard.pem \
   kube-api-server.key kube-api-server.crt \
   service-accounts.key service-accounts.crt \
   
+# --- Generate Data Encryption Config and Key ---
+
+# Generate an encryption key
+export ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+
+# Create the encryption-config.yaml file
+envsubst < configs/encryption-config.yaml \
+  > encryption-config.yaml
+
+# Copy the encryption-config.yaml file to the controller instance
+scp -i /home/ubuntu/.ssh/k8shard.pem encryption-config.yaml ubuntu@server:/home/ubuntu/
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/encryption-config.yaml /etc/kubernetes/"
