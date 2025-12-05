@@ -274,24 +274,84 @@ envsubst < configs/encryption-config.yaml \
 scp -i /home/ubuntu/.ssh/k8shard.pem encryption-config.yaml ubuntu@server:/home/ubuntu/
 ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/encryption-config.yaml /etc/kubernetes/"
 
+# --- Distribute etcd binaries and systemd unit to server ---
+scp -i /home/ubuntu/.ssh/k8shard.pem \
+  downloads/controller/etcd \
+  downloads/client/etcdctl \
+  units/etcd.service \
+  ubuntu@server:/home/ubuntu/
 
+# Move files into place on server
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/etcd /usr/local/bin/"
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/etcdctl /usr/local/bin/"
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server "sudo mv /home/ubuntu/etcd.service /etc/systemd/system/"
 
+# --- Distribute Kubernetes controller binaries, units, and configs to server ---
+scp -i /home/ubuntu/.ssh/k8shard.pem \
+  downloads/controller/kube-apiserver \
+  downloads/controller/kube-controller-manager \
+  downloads/controller/kube-scheduler \
+  downloads/client/kubectl \
+  units/kube-apiserver.service \
+  units/kube-controller-manager.service \
+  units/kube-scheduler.service \
+  configs/kube-scheduler.yaml \
+  configs/kube-apiserver-to-kubelet.yaml \
+  ubuntu@server:/home/ubuntu/
 
+# --- Distribute bridge and kubelet configs to worker nodes ---
+for HOST in node-0 node-1; do
+  SUBNET=$(grep $${HOST} /home/ubuntu/machines.txt | cut -d " " -f 4)
+  sed "s|SUBNET|$${SUBNET}|g" configs/10-bridge.conf > 10-bridge.conf
+  sed "s|SUBNET|$${SUBNET}|g" configs/kubelet-config.yaml > kubelet-config.yaml
 
+  scp -i /home/ubuntu/.ssh/k8shard.pem \
+    10-bridge.conf kubelet-config.yaml \
+    ubuntu@$${HOST}:/home/ubuntu/
+done
 
+# --- Distribute worker binaries, configs, and unit files ---
+for HOST in node-0 node-1; do
+  scp -i /home/ubuntu/.ssh/k8shard.pem \
+    downloads/worker/* \
+    downloads/client/kubectl \
+    configs/99-loopback.conf \
+    configs/containerd-config.toml \
+    configs/kube-proxy-config.yaml \
+    units/containerd.service \
+    units/kubelet.service \
+    units/kube-proxy.service \
+    ubuntu@$${HOST}:/home/ubuntu/
+done
 
+# --- Distribute CNI plugins ---
+for HOST in node-0 node-1; do
+  scp -i /home/ubuntu/.ssh/k8shard.pem \
+    downloads/cni-plugins/* \
+    ubuntu@$${HOST}:/home/ubuntu/cni-plugins/
+done
 
+# --- Add Pod Networking ---
+{
+  SERVER_IP=$(grep server /home/ubuntu/machines.txt | cut -d " " -f 1)
+  NODE_0_IP=$(grep node-0 /home/ubuntu/machines.txt | cut -d " " -f 1)
+  NODE_0_SUBNET=$(grep node-0 /home/ubuntu/machines.txt | cut -d " " -f 4)
+  NODE_1_IP=$(grep node-1 /home/ubuntu/machines.txt | cut -d " " -f 1)
+  NODE_1_SUBNET=$(grep node-1 /home/ubuntu/machines.txt | cut -d " " -f 4)
+}
 
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@server <<EOF
+  sudo ip route add $${NODE_0_SUBNET} via $${NODE_0_IP}
+  sudo ip route add $${NODE_1_SUBNET} via $${NODE_1_IP}
+EOF
 
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@node-0 <<EOF
+  sudo ip route add $${NODE_1_SUBNET} via $${NODE_1_IP}
+EOF
 
-
-
-
-
-
-
-
-
+ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@node-1 <<EOF
+  sudo ip route add $${NODE_0_SUBNET} via $${NODE_0_IP}
+EOF
 
 # --- Signal completion to server and nodes ---
 # Create marker file
