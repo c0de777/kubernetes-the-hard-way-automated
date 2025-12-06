@@ -266,6 +266,13 @@ for host in node-0 node-1; do
   ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${host} "sudo mv /home/ubuntu/kubelet.kubeconfig /var/lib/kubelet/kubeconfig"
 done
 
+# --- Distribute controller kubeconfigs to server ---
+scp -i /home/ubuntu/.ssh/k8shard.pem \
+  admin.kubeconfig \
+  kube-controller-manager.kubeconfig \
+  kube-scheduler.kubeconfig \
+  ubuntu@server:/home/ubuntu/
+
 # --- Generate an encryption key ---
 export ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 
