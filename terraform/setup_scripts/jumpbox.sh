@@ -76,9 +76,11 @@ chmod 600 /home/ubuntu/.ssh/k8shard.pem
 chown ubuntu:ubuntu /home/ubuntu/.ssh/k8shard.pem
 
 # --- Distribute hosts file to all cluster members ---
-while read IP FQDN HOST SUBNET; do
-  scp -i /home/ubuntu/.ssh/k8shard.pem hosts ubuntu@$${HOST}:~/
-  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${HOST} "sudo sh -c 'cat hosts >> /etc/hosts'"
+while read -r IP FQDN HOST SUBNET; do
+  scp -i /home/ubuntu/.ssh/k8shard.pem hosts ubuntu@$${HOST}:/tmp/hosts
+
+  ssh -i /home/ubuntu/.ssh/k8shard.pem ubuntu@$${HOST} \
+    "sudo tee -a /etc/hosts < /tmp/hosts > /dev/null"
 done < machines.txt
 
 # --- Certificate generation and distribution ---
